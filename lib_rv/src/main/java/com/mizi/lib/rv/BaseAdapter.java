@@ -52,8 +52,18 @@ public abstract class BaseAdapter<Data, Holder extends BaseHolder> extends Recyc
         notifyItemRangeChanged(start, count);
     }
 
+    @NonNull
+    @Override
+    public abstract Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType);
+
+    /**
+     * 根据 position 绑定(更新)holder中的数据
+     * @param holder 对应的holder
+     * @param position Item 的 index
+     */
     @Override
     public void onBindViewHolder(@NonNull Holder holder, int position) {
+        // 从 dataList 中取出 数据, 调用 holder 的相应方法, 绑定数据
         holder.bindView(getItemData(position));
     }
 
@@ -65,7 +75,6 @@ public abstract class BaseAdapter<Data, Holder extends BaseHolder> extends Recyc
             return dataList.size();
         }
     }
-
 
     public List<Data> getDataList() {
         return dataList;

@@ -1,4 +1,4 @@
-package com.mizi.lib.rv.event;
+package com.mizi.lib.rv;
 
 import android.text.TextWatcher;
 import android.util.SparseArray;
@@ -7,31 +7,32 @@ import android.view.ViewGroup;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
-import com.mizi.lib.rv.BaseHolder;
+import com.mizi.lib.rv.event.ClickEvent;
+import com.mizi.lib.rv.event.Event;
+import com.mizi.lib.rv.event.PairEvent;
 
 /**
  * 绑定事件
  */
 public abstract class EventHolder<Data> extends BaseHolder<Data> {
 
-    public static final int ITEM_POSITION_KEY = "ITEM_POSITION_KEY".hashCode();
+    public static final int ITEM_CLICK_KEY = "Item_Click_Key".hashCode();
 
-    private int[] clickViewIds;
+    private int[] eventIds;
 
     public EventHolder(ViewGroup parent, int resId) {
         super(parent, resId);
     }
 
-    @Deprecated
-    public EventHolder(ViewGroup parent, int resId, View.OnClickListener listener, int... clickViewIds) {
+    public EventHolder(ViewGroup parent, int resId, View.OnClickListener listener, int... eventIds) {
         super(parent, resId);
-        setClickListener(listener, clickViewIds);
+        this.eventIds = eventIds;
+        initClickListener(listener);
     }
 
-    @Deprecated
-    public EventHolder(ViewGroup parent, int resId, EventInitialer initializer) {
+    public EventHolder(ViewGroup parent, int resId, Event initializer) {
         super(parent, resId);
-        setEventInitializer(initializer);
+        initPairEvent(initializer);
     }
 
     @Deprecated
@@ -43,28 +44,11 @@ public abstract class EventHolder<Data> extends BaseHolder<Data> {
     @Override
     protected void bindView(Data itemData) {
         super.bindView(itemData);
-        bindEventPosition(position);
+        setEventViewTag(position);
     }
-
-    @Override
-    public void bindView(Object... values) {
-        super.bindView(values);
-        bindEventPosition(position);
-    }
-
-    protected void bindEventPosition(int position) {
-        if (clickViewIds == null || clickViewIds.length <= 0) {
-            itemView.setTag(ITEM_POSITION_KEY, position);
-        } else {
-            for (int id : clickViewIds) {
-                findView(id).setTag(id, position);
-            }
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    public <T extends EventHolder> T setClickListener(View.OnClickListener listener, int... clickViewIds) {
-        this.clickViewIds = clickViewIds;
+    public <T extends EventHolder> T setClickListener(View.OnClickListener listener, int... eventIds) {
+        this.eventIds = eventIds;
         this.initClickListener(listener);
         return (T) this;
     }
@@ -72,46 +56,46 @@ public abstract class EventHolder<Data> extends BaseHolder<Data> {
     /**
      * 建议在 Adapter 的 onCreateViewHolder 中调用此方法
      *
-     * @param initializer EventInitialer 的实现类
+     * @param initializer Event 的实现类
      * @return EventHolder
      */
     @SuppressWarnings("unchecked")
-    public <T extends EventHolder> T setEventInitializer(EventInitialer initializer) {
+    public <T extends EventHolder> T setEventInitializer(Event initializer) {
         this.initPairEvent(initializer);
         return (T) this;
     }
 
-    private void initPairEvent(EventInitialer initializer) {
+    private void initPairEvent(Event initializer) {
 
-        if (initializer instanceof ClickEventInitialer) {
-            initClickEvent((ClickEventInitialer) initializer);
+        if (initializer instanceof ClickEvent) {
+            initClickEvent((ClickEvent) initializer);
         }
 
-        if (initializer instanceof PairEventInitialer) {
-            PairEventInitialer pair = (PairEventInitialer) initializer;
+        if (initializer instanceof PairEvent) {
+            PairEvent pair = (PairEvent) initializer;
             SparseArray events = pair.getPairEventArray();
             initPairEvent(events);
         }
 
     }
 
-    private void initClickEvent(ClickEventInitialer initializer) {
-        ClickEventInitialer click = initializer;
-        this.clickViewIds = click.getEventIds();
-        if (this.clickViewIds.length == 0 || this.clickViewIds[0] == 0) {
+    private void initClickEvent(ClickEvent initializer) {
+        ClickEvent click = initializer;
+        this.eventIds = click.getEventIds();
+        if (this.eventIds.length == 0 || this.eventIds[0] == 0) {
             this.setOnItemClickListener(click.getClickListener());
         } else {
-            for (int eventId : clickViewIds) {
+            for (int eventId : eventIds) {
                 this.setOnClickListener(eventId, click.getClickListener());
             }
         }
     }
 
     private void initPairEvent(SparseArray events) {
-        this.clickViewIds = new int[events.size()];
+        this.eventIds = new int[events.size()];
         for (int i = 0; i < events.size(); i++) {
             Object object = events.valueAt(i);
-            int key = this.clickViewIds[i] = events.keyAt(i);
+            int key = this.eventIds[i] = events.keyAt(i);
             if (object instanceof View.OnClickListener) {
                 this.setOnClickListener(key, (View.OnClickListener) object);
             } else if (object instanceof View.OnLongClickListener) {
@@ -130,11 +114,21 @@ public abstract class EventHolder<Data> extends BaseHolder<Data> {
     }
 
     private void initClickListener(View.OnClickListener listener) {
-        if (clickViewIds == null || clickViewIds.length <= 0) {
+        if (eventIds == null || eventIds.length <= 0) {
             this.setOnItemClickListener(listener);
         } else {
-            for (int id : clickViewIds) {
+            for (int id : eventIds) {
                 setOnClickListener(id, listener);
+            }
+        }
+    }
+
+    private void setEventViewTag(int position) {
+        if (eventIds == null || eventIds.length <= 0) {
+            itemView.setTag(ITEM_CLICK_KEY, position);
+        } else {
+            for (int id : eventIds) {
+                findView(id).setTag(id, position);
             }
         }
     }
@@ -159,6 +153,5 @@ public abstract class EventHolder<Data> extends BaseHolder<Data> {
     private void setOnFocusChangeListener(int eventId, View.OnFocusChangeListener listener) {
         findView(eventId).setOnFocusChangeListener(listener);
     }
-
 
 }

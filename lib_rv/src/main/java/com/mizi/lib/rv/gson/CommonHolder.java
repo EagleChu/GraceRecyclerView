@@ -1,29 +1,28 @@
 package com.mizi.lib.rv.gson;
 
+import android.view.View;
 import android.view.ViewGroup;
 
+import com.mizi.lib.rv.EventHolder;
 import com.mizi.lib.rv.ItemEntity;
-import com.mizi.lib.rv.builder.MultipleBuilder;
-import com.mizi.lib.rv.type.MultipleHolder;
+import com.mizi.lib.rv.event.Event;
 
-import java.util.List;
+public abstract class CommonHolder<Entity> extends GsonHolder<ItemEntity<Entity>> {
 
-/**
- * 参考对应的 {@link CommonAdapter} 中的说明
- */
-public class CommonHolder extends MultipleHolder<ItemEntity> {
+    private Entity entity;
 
-    public CommonHolder(ViewGroup parent, int viewType, MultipleBuilder builder) {
-        super(parent, builder.getLayoutResId(viewType), builder);
+    public CommonHolder(ViewGroup parent, int layoutResId, int... to) {
+        super(parent, layoutResId, to);
     }
 
-    @SuppressWarnings("unchecked")
-    protected <Entity> Entity getEntity() {
-        return (Entity) itemData.entity;
-    }
-    @SuppressWarnings("unchecked")
-    public <Entity> Entity getEntity(List<ItemEntity> dataList,int position){
-        return (Entity) dataList.get(position).entity;
+    public CommonHolder(ViewGroup parent, int resId, View.OnClickListener listener, int... eventIds) {
+        super(parent, resId, listener, eventIds);
     }
 
+    @Override
+    protected void bindView(ItemEntity<Entity> itemData) {
+        super.bindView(itemData);
+        if (itemData != null)
+            entity = itemData.entity;
+    }
 }
